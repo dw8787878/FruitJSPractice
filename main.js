@@ -1,4 +1,4 @@
-const _ = require('lodash')
+let fruitsData = require('./fruits.js')
 
 /**
     Given sequence of fruits
@@ -50,65 +50,98 @@ const basePrices = {
 var possibleRegions = [
     { RegionName: 'north america' },
     { RegionName: 'south america' },
-    { RegionName: 'afica' },
+    { RegionName: 'africa' },
     { RegionName: 'europe' },
     { RegionName: 'australia' },
 ];
-/**
- * @function SelectRandom
- * @param  {Array<any>} items {description}
- */
-function SelectRandom(items) {
-    return items[Math.floor(Math.random() * items.length)];
+
+function findMonth(day){
+    switch (Math.floor(day/30)){
+        case(0):
+            return 'January'
+        case(1):
+            return 'February'
+        case(2):
+            return 'March'
+        case(3):
+            return 'April'
+        case(4):
+            return 'May'
+        case(5):
+            return 'June'
+        case(6):
+            return 'July'
+        case(7):
+            return 'August'
+        case(8):
+            return 'September'
+        case(9):
+            return 'October'
+        case(10):
+            return 'November'
+        case(11):
+            return 'December'
+        default:
+            return 'findMonth error'
+    }
 }
-//============================
-//
-//============================
-let INSTANCE_RegionsObject = _.map(possibleRegions, (region) => {
-    let priceModifierOfFruitArray = _.map(possibleFruits, (fruit) => _.random(1, 5))
-    let possibleFruitNames = _.map(possibleFruits, (fruit) => fruit.FruitName)
-    let PriceModifierObject = _.fromPairs(_.zip(possibleFruitNames, priceModifierOfFruitArray))
-    return { RegionName: region.RegionName, PriceModifierOfFruit: PriceModifierObject }
-});
 
-let INSTANCE_FruitsObject = _.map(possibleFruits, (fruit) => {
-    let offset = _.random(0, 2 * Math.PI)
-    let PeriodicityModifier = (dayNumber) => 1 + Math.sin(offset + (dayNumber * Math.PI / 180))
-    return { FruitName: fruit.FruitName, PeriodicityModifier: PeriodicityModifier }
+let allPricesByMonth = {
+    'January': [],
+    'February': [],
+    'March': [],
+    'April': [],
+    'May': [],
+    'June': [],
+    'July': [],
+    'August': [],
+    'September': [],
+    'October': [],
+    'November': [],
+    'December': []
+}
+
+fruitsData.data.forEach((dayData) => {
+    let month = findMonth(dayData.Day)
+    allPricesByMonth[month].push(dayData)
 })
 
+class fruitByMonthData {
+  constructor(name, region, averagePrice){
+    this.name = name,
+    this.region = region,
+    this.averagePrice = averagePrice
+  }
+}
 
-//============================
-// Need to map over a range of 1000 days
-// And create between 3 and 10 price measurements per fruit per day
-//============================
-let days = _.range(0, 360);
-let nestedFruitRecords = _.map(days, (day) => {
-    //For each fruit
-    let fruitMaps = _.map(INSTANCE_FruitsObject, (fruit) => {
-        //Return between 3 and 10 fruits
-        let createdFruits = _.map(_.range(0, _.random(3, 10, false)), (_some) => {
-            let INSTANCE_randomlySelectedRegion = SelectRandom(INSTANCE_RegionsObject);
-            let INSTANCE_priceMod = INSTANCE_randomlySelectedRegion.PriceModifierOfFruit[fruit.FruitName] * fruit.PeriodicityModifier(day)
-            let INSTANCE_price = INSTANCE_priceMod * basePrices[fruit.FruitName]
-            return {
-                Day: day,
-                Name: fruit.FruitName,
-                //Region needs to be selected randomly
-                Region: INSTANCE_randomlySelectedRegion.RegionName,
-                Price: INSTANCE_price
+  // takes in pricing data for that month
+  // returns an object by sorted by fruit type
+function sortByFruits(eachMonthData){
+  console.log(eachMonthData[0])  // <==fruitPricePoint
+  console.log('//////')
+//   console.log(eachMonthData)
+
+  // this array stores the average price of each fruit for that month
+  let fruitPricesMonth = []
+  // initialize with first price point from eachMonthData
+  fruitPricesMonth.push(new fruitByMonthData(eachMonthData[0].Name, eachMonthData[0].Region, eachMonthData[0].Price))
+  eachMonthData.splice(0,1)
+
+  eachMonthData.forEach((fruitPricePoint) =>{
+    fruitPricesMonth.forEach((fruitData)=>{
+        if(fruitData.Name === fruitPricePoint.Name){
+            if(fruitData.Region === fruitPricePoint.Region) {
+                fruitData.Price = fruitData.Price + fruitPricePoint.Price / 2
+            } else {
+                fruitPricesMonth.push(new fruitByMonthData(eachMonthData.Name, eachMonthData.Region, eachMonthData.Price))
             }
-        })
-        return createdFruits;
+        } else {
+          fruitPricesMonth.push(new fruitByMonthData(eachMonthData.Name, eachMonthData.Region, eachMonthData.Price))
+        }
     })
-    return fruitMaps;
-})
-let flattenedFruitRecords = _.flattenDeep(nestedFruitRecords);
-
-debugger;
+  })
+}
 
 
 
-//==============================
-// BEGIN PROGRAMMING HERE
-//==============================
+sortByFruits(allPricesByMonth.January)
